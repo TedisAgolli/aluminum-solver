@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, field_validator
 import pulp
 from typing import Dict
@@ -7,6 +8,7 @@ import logging
 import sys
 import time
 import threading
+import os
 
 # Configure logging to stdout so we can see it in the terminal
 logging.basicConfig(
@@ -188,6 +190,12 @@ def solve_cutting_stock(stock_length: int, pieces: Dict[int, int]) -> SolverResp
         efficiency_percent=round(efficiency, 1)
     )
 
+
+@app.get("/")
+async def root():
+    """Serve the main HTML page"""
+    html_path = os.path.join(os.path.dirname(__file__), "..", "public", "index.html")
+    return FileResponse(html_path)
 
 @app.get("/api")
 async def api_root():

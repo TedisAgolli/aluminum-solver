@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import the routes from api/index.py
-from api.index import solve, api_root
+from api.index import solve, api_root, root
 
 # Create main app
 app = FastAPI()
@@ -22,7 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add API routes
+# Add API routes  
+app.get("/")(root)
 app.post("/api/solve")(solve)
 app.get("/api")(api_root)
 
