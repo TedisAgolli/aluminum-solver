@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/**/*.py": {
-      "includeFiles": "public/**"
-    }
-  },
   "rewrites": [
     { "source": "/", "destination": "/index.html" }
   ]

@@ -194,14 +194,14 @@ def solve_cutting_stock(stock_length: int, pieces: Dict[int, int]) -> SolverResp
 @app.get("/")
 async def root():
     """Serve the main HTML page"""
-    # Read the HTML file and return it
-    html_path = os.path.join(os.path.dirname(__file__), "..", "public", "index.html")
+    # Read the HTML file from the same directory
+    html_path = os.path.join(os.path.dirname(__file__), "index.html")
     try:
         with open(html_path, "r") as f:
             html_content = f.read()
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
-        # Fallback if file not found - this shouldn't happen but just in case
+        # Fallback if file not found
         raise HTTPException(status_code=500, detail="UI file not found")
 
 @app.get("/api")
