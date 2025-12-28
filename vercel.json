@@ -1,12 +1,16 @@
 {
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/api/solve",
       "dest": "/api/index.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "src": "/api",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/",
+      "dest": "/api/home.py"
     }
   ]
 }
