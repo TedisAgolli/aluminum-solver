@@ -1,16 +1,3 @@
 {
-  "routes": [
-    {
-      "src": "/api/solve",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/api",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/",
-      "dest": "/api/home.py"
-    }
-  ]
+  "cleanUrls": true
 }
