@@ -189,11 +189,6 @@ def solve_cutting_stock(stock_length: int, pieces: Dict[int, int]) -> SolverResp
     )
 
 
-@app.get("/")
-async def root():
-    return {"message": "Aluminum Cutting Calculator API"}
-
-
 @app.get("/api")
 async def api_root():
     return {"message": "Aluminum Cutting Calculator API"}

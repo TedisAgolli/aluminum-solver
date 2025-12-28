@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import the routes from api/index.py
-from api.index import solve, api_root, root
+from api.index import solve, api_root
 
 # Create main app
 app = FastAPI()
