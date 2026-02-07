@@ -59,6 +59,28 @@ class SolverResponse(BaseModel):
     bar_plans: list[BarPlan]
     total_waste: int
     efficiency_percent: float
+    used_heuristic: bool = False  # True if FFD fallback was used
+
+
+def solve_ffd(stock_length: int, cuts: list[int]) -> list[list[int]]:
+    """First-Fit Decreasing heuristic - fast near-optimal solution."""
+    sorted_cuts = sorted(cuts, reverse=True)
+    bars = []
+    bar_remaining = []
+
+    for cut in sorted_cuts:
+        placed = False
+        for i, remaining in enumerate(bar_remaining):
+            if remaining >= cut:
+                bars[i].append(cut)
+                bar_remaining[i] -= cut
+                placed = True
+                break
+        if not placed:
+            bars.append([cut])
+            bar_remaining.append(stock_length - cut)
+
+    return bars
 
 
 def solve_cutting_stock(stock_length: int, pieces: Dict[int, int]) -> SolverResponse:
@@ -92,10 +114,49 @@ def solve_cutting_stock(stock_length: int, pieces: Dict[int, int]) -> SolverResp
         cuts.extend([length] * count)
     
     n = len(cuts)
-    bars = n  # safe upper bound
     logger.info(f"📊 Total pieces to cut: {n}")
+
+    # For large problems, skip ILP and use FFD directly for fast response
+    if n > 15:
+        logger.info("⚡ Large problem detected, using FFD heuristic for fast response")
+        bar_assignments = solve_ffd(stock_length, cuts)
+        bar_plans = []
+        total_waste = 0
+
+        for assigned in bar_assignments:
+            used = sum(assigned)
+            waste = stock_length - used
+            total_waste += waste
+            bar_plans.append(BarPlan(
+                bar_number=len(bar_plans) + 1,
+                cuts=assigned,
+                used_mm=used,
+                waste_mm=waste
+            ))
+
+        total_material_needed = sum(cuts)
+        total_material_used = len(bar_plans) * stock_length
+        efficiency = (total_material_needed / total_material_used * 100) if total_material_used > 0 else 0
+        elapsed_time = time.time() - start_time
+
+        logger.info(f"📋 Results (FFD):")
+        logger.info(f"   - Bars needed: {len(bar_plans)}")
+        logger.info(f"   - Total waste: {total_waste}mm")
+        logger.info(f"   - Efficiency: {round(efficiency, 1)}%")
+        logger.info(f"⏱️  Total time: {elapsed_time:.2f} seconds")
+        logger.info("=" * 60)
+
+        return SolverResponse(
+            bars_needed=len(bar_plans),
+            bar_plans=bar_plans,
+            total_waste=total_waste,
+            efficiency_percent=round(efficiency, 1),
+            used_heuristic=True
+        )
+
+    bars = n  # safe upper bound
     logger.info(f"📊 Maximum bars possible: {bars}")
-    
+
     logger.info("🔨 Building linear programming model...")
     model = pulp.LpProblem("CuttingStockMM", pulp.LpMinimize)
     
@@ -139,55 +200,70 @@ def solve_cutting_stock(stock_length: int, pieces: Dict[int, int]) -> SolverResp
     progress_thread.start()
     
     try:
-        model.solve(pulp.PULP_CBC_CMD(msg=False))
+        model.solve(pulp.PULP_CBC_CMD(msg=False, timeLimit=2))
     finally:
         solving['active'] = False
         progress_thread.join(timeout=1)
     
-    # Check if solution was found
-    if model.status != pulp.LpStatusOptimal:
-        logger.error("❌ Could not find optimal solution")
-        raise ValueError("Could not find optimal solution")
-    
-    logger.info("✅ Solution found! Building cutting plan...")
-    
-    # Build bar plans
+    # Check if solution was found, fallback to FFD if not optimal
+    used_heuristic = False
     bar_plans = []
     total_waste = 0
-    
-    for j in range(bars):
-        if y[j].value() == 1:
-            assigned = [cuts[i] for i in range(n) if x[i][j].value() == 1]
+
+    if model.status != pulp.LpStatusOptimal:
+        logger.warning("⚠️ ILP solver timed out, falling back to FFD heuristic")
+        used_heuristic = True
+        bar_assignments = solve_ffd(stock_length, cuts)
+
+        for assigned in bar_assignments:
             used = sum(assigned)
             waste = stock_length - used
             total_waste += waste
-            
+
             bar_plans.append(BarPlan(
                 bar_number=len(bar_plans) + 1,
                 cuts=assigned,
                 used_mm=used,
                 waste_mm=waste
             ))
-    
+    else:
+        logger.info("✅ Optimal solution found! Building cutting plan...")
+
+        for j in range(bars):
+            if y[j].value() == 1:
+                assigned = [cuts[i] for i in range(n) if x[i][j].value() == 1]
+                used = sum(assigned)
+                waste = stock_length - used
+                total_waste += waste
+
+                bar_plans.append(BarPlan(
+                    bar_number=len(bar_plans) + 1,
+                    cuts=assigned,
+                    used_mm=used,
+                    waste_mm=waste
+                ))
+
     # Calculate efficiency
     total_material_needed = sum(cuts)
     total_material_used = len(bar_plans) * stock_length
     efficiency = (total_material_needed / total_material_used * 100) if total_material_used > 0 else 0
-    
+
     elapsed_time = time.time() - start_time
-    
+
     logger.info(f"📋 Results:")
     logger.info(f"   - Bars needed: {len(bar_plans)}")
     logger.info(f"   - Total waste: {total_waste}mm")
     logger.info(f"   - Efficiency: {round(efficiency, 1)}%")
+    logger.info(f"   - Used heuristic: {used_heuristic}")
     logger.info(f"⏱️  Total time: {elapsed_time:.2f} seconds")
     logger.info("=" * 60)
-    
+
     return SolverResponse(
         bars_needed=len(bar_plans),
         bar_plans=bar_plans,
         total_waste=total_waste,
-        efficiency_percent=round(efficiency, 1)
+        efficiency_percent=round(efficiency, 1),
+        used_heuristic=used_heuristic
     )
 
 
