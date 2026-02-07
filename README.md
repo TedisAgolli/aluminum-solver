@@ -1,56 +1,37 @@
 # Aluminum Cutting Calculator
 
-A web application that calculates the optimal cutting plan for aluminum bars using linear programming.
-
-## Features
-
-- Calculate minimum number of bars needed
-- Optimal cutting plan for each bar
-- Waste calculation and efficiency metrics
-- Simple, easy-to-use interface
+A web app that calculates the optimal way to cut aluminum bars to minimize waste.
 
 ## Local Development
 
-1. Create and activate a virtual environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+### Prerequisites
+- Python 3.11+
+- Vercel CLI
 
-2. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
+### Setup
 
-3. Run the development server:
-```bash
-python3 main.py
-```
+1. Install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
-4. Open http://localhost:8000 in your browser
+2. Install Vercel CLI (if not already installed):
+   ```bash
+   npm i -g vercel
+   ```
+
+3. Run the dev server:
+   ```bash
+   vercel dev
+   ```
+
+4. Open http://localhost:3000
 
 ## Deployment
 
-1. Install Vercel CLI (one time):
-```bash
-npm i -g vercel
-```
-
-2. Deploy to Vercel:
+Push to main branch or run:
 ```bash
 vercel --prod
 ```
-
-## How It Works
-
-1. Enter the length of your stock aluminum bars (default: 6500mm)
-2. Add the pieces you need (length and quantity)
-3. Click "Calculate Cutting Plan"
-4. See how many bars to buy and how to cut them
-
-## Technology Stack
-
-- **Backend**: FastAPI (Python)
-- **Frontend**: Vanilla HTML/CSS/JavaScript
-- **Solver**: PuLP (linear programming)
-- **Deployment**: Vercel
